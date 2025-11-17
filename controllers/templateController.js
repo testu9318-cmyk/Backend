@@ -29,6 +29,7 @@ const updateTemplate = async (req, res) => {
 
 const deleteTemplate = async (req, res) => {
   try {
+    console.log('req.params.id', req.params.id)
     const data = await TemplateServices.deleteTemplate(req.params.id);
     return res.json(data);
   } catch {
