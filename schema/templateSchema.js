@@ -3,7 +3,11 @@ const mongoose = require("mongoose");
 const templateSchema = new mongoose.Schema({
   roundId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Round",
+    ref: "Round",  
+  },
+  category: {
+    type: String,
+    enum: ["Onboarding", "Follow-up", "Newsletter", "Promotional"],
     required: true,
   },
   name: { type: String, required: true },
