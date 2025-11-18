@@ -1,5 +1,5 @@
 const EmailHistory = require("../schema/emailHistory");
-const { sendEmail, sendBulkEmails } = require("../services/emailServices");
+const { sendEmail, sendBulkEmails,getTotalEmails, countSentEmails } = require("../services/emailServices");
 
 // @desc    Send single email
 // @route   POST /api/email/send
@@ -87,4 +87,23 @@ exports.getUserEmailHistory = async (req, res) => {
     count: history.length,
     data: history,
   });
+};
+
+
+exports.getTotalEmails = async (req, res) => {
+  try {
+    const data = await getTotalEmails(req, res);
+    return res.json(data);
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to get total emails", error: error.message });
+  }
+};
+
+exports.getSentEmailCount = async (req, res) => {
+  try {
+    const data = await countSentEmails();
+    return res.json(data);
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to get sent email count", error: error.message });
+  }
 };

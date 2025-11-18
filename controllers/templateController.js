@@ -11,7 +11,7 @@ const createTemplate = async (req, res) => {
 
 const getTemplate = async (req, res) => {
   try {
-    const data = await TemplateServices.getTemplate();
+    const data = await TemplateServices.getTemplate(req, res);
     return res.json(data);
   } catch {
     return res.status(400);
@@ -34,6 +34,15 @@ const deleteTemplate = async (req, res) => {
     return res.json(data);
   } catch {
     return res.status(400);
+  }
+};
+
+const getTotalEmails = async (req, res) => {
+  try {
+    const data = await TemplateServices.getTotalEmails(req, res);
+    return res.json(data);
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to get total emails", error: error.message });
   }
 };
 

@@ -104,7 +104,29 @@ const sendBulkEmails = async (userIds, roundId, templateId) => {
   return results;
 };
 
+
+const getTotalEmails = async () =>{
+    try {
+      const count = await EmailHistory.countDocuments();
+      return { totalEmails: count };
+    } catch (error) {
+      throw new Error("Error counting emails: " + error.message);
+    }
+  };
+
+
+ const  countSentEmails= async () => {
+    try {
+      const count = await EmailHistory.countDocuments({ status: "sent" });
+      return { totalSentEmails: count };
+    } catch (error) {
+      throw new Error("Error counting sent emails: " + error.message);
+    }
+  };
+
 module.exports = {
   sendEmail,
   sendBulkEmails,
+  getTotalEmails,
+  countSentEmails,
 };
