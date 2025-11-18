@@ -124,9 +124,47 @@ const getTotalEmails = async () =>{
     }
   };
 
+
+  const addUsersAndSendEmails = async (userDatas, roundId, templateId) => {
+  const results = [];
+  let addedUsers = [];
+
+  try {
+    // Add users to the database
+    for (let userData of userDatas) {
+      const user = await addUserToDatabase(userData); // Add user to DB
+      addedUsers.push(user);  // Collect users added to the DB
+    }
+
+    // Send emails to the added users
+    for (let user of addedUsers) {
+      const success = await sendEmailToUser(user._id, roundId, templateId);
+      results.push({ userId: user.id, success });
+    }
+
+    return results;
+  } catch (error) {
+    console.error("Error adding users or sending emails:", error);
+    throw new Error("Failed to add users or send emails.");
+  }
+};
+
+// Function to add a user to the database (simplified)
+const addUserToDatabase = async (userData) => {
+  try {
+    // Assuming `User` is the Sequelize model for your users
+    const user = await User.create(userData); // Add user with basic data
+    return user;
+  } catch (error) {
+    console.error(`Error adding user ${userId} to the database:`, error);
+    throw new Error(`Failed to add user ${userId}`);
+  }
+};
+
 module.exports = {
   sendEmail,
   sendBulkEmails,
   getTotalEmails,
   countSentEmails,
+  addUsersAndSendEmails
 };

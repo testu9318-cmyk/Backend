@@ -107,3 +107,40 @@ exports.getSentEmailCount = async (req, res) => {
     return res.status(500).json({ message: "Failed to get sent email count", error: error.message });
   }
 };
+
+
+exports.addUsersAndSendBulkEmail = async (req, res) => {
+  const { userIds, roundId, templateId } = req.body;
+
+  // Validate input
+  if (!userIds || !Array.isArray(userIds) || !roundId || !templateId) {
+    return res.status(400).json({
+      success: false,
+      error: "userIds (array), roundId, and templateId are required",
+    });
+  }
+
+  try {
+    // Call the service to add users and send emails
+    const results = await addUsersAndSendEmails(userIds, roundId, templateId);
+
+    const successCount = results.filter((r) => r.success).length;
+    const failCount = results.filter((r) => !r.success).length;
+
+    return res.json({
+      success: true,
+      message: `Users added and emails sent to ${successCount} users, ${failCount} failed.`,
+      data: {
+        total: results.length,
+        successful: successCount,
+        failed: failCount,
+        results,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: "An error occurred while adding users or sending emails.",
+    });
+  }
+};
