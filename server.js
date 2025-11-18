@@ -1,0 +1,31 @@
+const express = require("express");
+const app = express();
+const userStatus = require("./routes/status-route");
+const cors = require("cors");
+const dotenv = require("dotenv");
+const connectDB = require("./config/db");
+const userRoutes = require("./routes/user-route");
+const coursesRoutes = require("./routes/courese-route");
+const RoundRoutes = require("./routes/round-route");
+const TemplateRoutes = require("./routes/template-route");
+const EmailRoutes = require("./routes/email-route");
+dotenv.config();
+// db connetion
+
+connectDB();
+app.use(express.json()); // for parsing JSON in POST requests
+app.use(cors());
+
+app.use(express.json());
+
+// Register routes
+app.use("/api/status", userStatus);
+app.use("/api", userRoutes);
+app.use("/api", coursesRoutes);
+app.use("/api", RoundRoutes);
+app.use("/api", TemplateRoutes);
+app.use("/api", EmailRoutes);
+
+// Start server
+const PORT = 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
