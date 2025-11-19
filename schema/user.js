@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema(
     },
 
     // Authentication / Security
-    passwordHash: { type: String, required: true },
+    passwordHash: { type: String },
     salt: { type: String },
     isEmailVerified: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },

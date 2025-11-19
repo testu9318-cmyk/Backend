@@ -9,7 +9,6 @@ const emailHistorySchema = new mongoose.Schema({
   roundId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Round",
-    required: [true, "Round ID is required"],
   },
   templateId: {
     type: mongoose.Schema.Types.ObjectId,
