@@ -1,5 +1,5 @@
 const EmailHistory = require("../schema/emailHistory");
-const { sendEmail, sendBulkEmails,getTotalEmails, countSentEmails } = require("../services/emailServices");
+const { sendEmail, sendBulkEmails,getTotalEmails, countSentEmails, addUsersAndSendEmails } = require("../services/emailServices");
 
 // @desc    Send single email
 // @route   POST /api/email/send
@@ -13,7 +13,7 @@ exports.sendSingleEmail = async (req, res) => {
     });
   }
 
-  const result = await sendEmail(userId, roundId, templateId);
+  const result = await sendEmail(userId,templateId);
 
   res.json({
     success: true,
@@ -34,7 +34,7 @@ exports.sendBulkEmail = async (req, res) => {
     });
   }
 
-  const results = await sendBulkEmails(userIds, roundId, templateId);
+  const results = await sendBulkEmails(userIds,templateId);
 
   const successCount = results.filter((r) => r.success).length;
   const failCount = results.filter((r) => !r.success).length;
@@ -110,10 +110,8 @@ exports.getSentEmailCount = async (req, res) => {
 
 
 exports.addUsersAndSendBulkEmail = async (req, res) => {
-  const { userIds, roundId, templateId } = req.body;
-
-  // Validate input
-  if (!userIds || !Array.isArray(userIds) || !roundId || !templateId) {
+  const { userIds,templateId } = req.body;
+  if (!userIds || !Array.isArray(userIds)) {
     return res.status(400).json({
       success: false,
       error: "userIds (array), roundId, and templateId are required",
@@ -122,7 +120,7 @@ exports.addUsersAndSendBulkEmail = async (req, res) => {
 
   try {
     // Call the service to add users and send emails
-    const results = await addUsersAndSendEmails(userIds, roundId, templateId);
+    const results = await addUsersAndSendEmails(userIds, templateId);
 
     const successCount = results.filter((r) => r.success).length;
     const failCount = results.filter((r) => !r.success).length;

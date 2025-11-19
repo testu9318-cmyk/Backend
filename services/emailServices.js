@@ -11,14 +11,13 @@ function processTemplate(templateString, data) {
 
 
 // Send single email
-const sendEmail = async (userId, roundId, templateId) => {
+const sendEmail = async (userId, templateId) => {
   try {
     // Fetch required data
     const user = await User.findById(userId);
-    const round = await Round.findById(roundId);
     const template = await Template.findById(templateId);
 
-    if (!user || !round || !template) {
+    if (!user || !template) {
       throw new Error("User, Round, or Template not found");
     }
     // Process template
@@ -44,7 +43,6 @@ const sendEmail = async (userId, roundId, templateId) => {
     // Save to history
     const history = new EmailHistory({
       userId,
-      roundId,
       templateId,
       status: "sent",
       emailContent: { subject, body },
@@ -61,7 +59,6 @@ const sendEmail = async (userId, roundId, templateId) => {
     // Save failed attempt
     const history = new EmailHistory({
       userId,
-      roundId,
       templateId,
       status: "failed",
       error: error.message,
@@ -73,19 +70,17 @@ const sendEmail = async (userId, roundId, templateId) => {
 };
 
 // Send bulk emails
-const sendBulkEmails = async (userIds, roundId, templateId) => {
-  const round = await Round.findById(roundId);
+const sendBulkEmails = async (userIds, templateId) => {
   const template = await Template.findById(templateId);
-
-  if (!round || !template) {
-    throw new Error("Round or Template not found");
+  if (!template) {
+    throw new Error("Template not found");
   }
 
   const results = [];
 
   for (const userId of userIds) {
     try {
-      const result = await sendEmail(userId, roundId, templateId);
+      const result = await sendEmail(userId, templateId);
       results.push({
         userId,
         email: result.email,
@@ -125,23 +120,20 @@ const getTotalEmails = async () =>{
   };
 
 
-  const addUsersAndSendEmails = async (userDatas, roundId, templateId) => {
+  const addUsersAndSendEmails = async (userDatas,templateId) => {
   const results = [];
   let addedUsers = [];
 
   try {
-    // Add users to the database
-    for (let userData of userDatas) {
-      const user = await addUserToDatabase(userData); // Add user to DB
-      addedUsers.push(user);  // Collect users added to the DB
-    }
-
+   for (let userData of userDatas) {
+      const { id, ...rest } = userData; 
+     const user = await addUserToDatabase(rest); 
+     addedUsers.push(user);
+   }
     // Send emails to the added users
-    for (let user of addedUsers) {
-      const success = await sendEmailToUser(user._id, roundId, templateId);
-      results.push({ userId: user.id, success });
-    }
-
+      const success = await sendBulkEmails(addedUsers, templateId);
+      results.push(...success);
+    console.log('results', results)
     return results;
   } catch (error) {
     console.error("Error adding users or sending emails:", error);
@@ -152,12 +144,19 @@ const getTotalEmails = async () =>{
 // Function to add a user to the database (simplified)
 const addUserToDatabase = async (userData) => {
   try {
-    // Assuming `User` is the Sequelize model for your users
-    const user = await User.create(userData); // Add user with basic data
+    const cleanData = {
+      email: userData.email,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      name: userData.name,
+    };
+
+    const user = await User.create(cleanData);
     return user;
+
   } catch (error) {
-    console.error(`Error adding user ${userId} to the database:`, error);
-    throw new Error(`Failed to add user ${userId}`);
+    console.error(`Error adding user to the database:`, error);
+    throw new Error(`Failed to add user`);
   }
 };
 
