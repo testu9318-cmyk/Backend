@@ -9,6 +9,9 @@ const coursesRoutes = require("./routes/courese-route");
 const RoundRoutes = require("./routes/round-route");
 const TemplateRoutes = require("./routes/template-route");
 const EmailRoutes = require("./routes/email-route");
+const CompaignRoutes = require("./routes/campaign-route");
+
+// Load environment variables
 dotenv.config();
 // db connetion
 
@@ -25,6 +28,7 @@ app.use("/api", coursesRoutes);
 app.use("/api", RoundRoutes);
 app.use("/api", TemplateRoutes);
 app.use("/api", EmailRoutes);
+app.use("/api", CompaignRoutes);
 
 // Start server
 const PORT = 5000;
