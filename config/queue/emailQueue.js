@@ -8,5 +8,15 @@ const emailQueue = new Queue("emailQueue", {
     enableReadyCheck: false       // Recommended for local Redis
   }
 });
+emailQueue.on('completed', (job) => {
+  console.log(`Job ${job.id} completed successfully`);
+});
 
+emailQueue.on('failed', (job, err) => {
+  console.error(`Job ${job.id} failed:`, err.message);
+});
+
+emailQueue.on('error', (error) => {
+  console.error('Queue error:', error);
+});
 module.exports = emailQueue;

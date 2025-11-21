@@ -95,7 +95,6 @@ const sendBulkEmails = async (userIds, templateId) => {
       });
     }
   }
-
   return results;
 };
 
