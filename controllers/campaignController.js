@@ -12,12 +12,14 @@ exports.createCampaign = async (req, res) => {
       subject,
       type,
       sendDate,
-      sendTime,      // ADD THIS
-      timezone,      // used for conversion
+      sendTime,
+      timezone,
       templateId,
       recipientSegmentId
     } = req.body;
-console.log('req.body', req.body)
+
+    console.log('req.body', req.body);
+
     // Validate required fields
     if (!name || !subject || !type || !sendDate || !sendTime || !timezone || !templateId || !recipientSegmentId) {
       return res.status(400).json({
@@ -26,9 +28,32 @@ console.log('req.body', req.body)
       });
     }
 
+    // Map common timezone abbreviations to IANA identifiers
+    const timezoneMap = {
+      'UTC': 'UTC',
+      'EST': 'America/New_York',
+      'PST': 'America/Los_Angeles',
+      'GMT': 'Europe/London',
+      'IST': 'Asia/Kolkata',
+      'CST': 'America/Chicago',
+      'MST': 'America/Denver'
+    };
+
+    // Use mapped timezone or original if it's already in IANA format
+    const ianaTimezone = timezoneMap[timezone] || timezone;
+
+    // Validate timezone
+    if (!moment.tz.zone(ianaTimezone)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid timezone provided: ${timezone}`
+      });
+    }
+
     // Validate segment
     const segment = await Segment.findById(recipientSegmentId);
-    console.log('segment', segment)
+    console.log('segment', segment);
+    
     if (!segment) {
       return res.status(404).json({
         success: false,
@@ -36,76 +61,93 @@ console.log('req.body', req.body)
       });
     }
 
-   if (!moment(sendDate, "YYYY-MM-DD", true).isValid()) {
-  return res.status(400).json({
-    success: false,
-    message: "sendDate must be in YYYY-MM-DD format"
-  });
-}
+    // Validate date format (YYYY-MM-DD)
+    if (!moment(sendDate, "YYYY-MM-DD", true).isValid()) {
+      return res.status(400).json({
+        success: false,
+        message: "sendDate must be in YYYY-MM-DD format"
+      });
+    }
 
-// Validate time format
-if (!moment(sendTime, "HH:mm", true).isValid()) {
-  return res.status(400).json({
-    success: false,
-    message: "sendTime must be in HH:mm (24-hour) format"
-  });
-}
+    // Validate time format (HH:mm in 24-hour format)
+    if (!moment(sendTime, "HH:mm", true).isValid()) {
+      return res.status(400).json({
+        success: false,
+        message: "sendTime must be in HH:mm (24-hour) format"
+      });
+    }
 
-// 1️⃣ Combine date + time in user's timezone
-const localDateTime = moment.tz(
-  `${sendDate} ${sendTime}`,
-  "YYYY-MM-DD HH:mm",
-  timezone
-);
+    // Combine date + time in user's selected timezone
+    const localDateTime = moment.tz(
+      `${sendDate} ${sendTime}`,
+      "YYYY-MM-DD HH:mm",
+      ianaTimezone
+    );
 
-// 2️⃣ Check if date-time is valid
-if (!localDateTime.isValid()) {
-  return res.status(400).json({
-    success: false,
-    message: "Invalid sendDate/sendTime/timezone combination"
-  });
-}
+    console.log('Selected Timezone:', ianaTimezone);
+    console.log('Local DateTime:', localDateTime.format('YYYY-MM-DD HH:mm:ss Z'));
 
-// 3️⃣ Convert to UTC
-const utcDateTime = localDateTime.clone().utc();
+    // Check if the combined date-time is valid
+    if (!localDateTime.isValid()) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid sendDate/sendTime/timezone combination"
+      });
+    }
 
-// 4️⃣ Calculate delay for Bull
-        let delay = utcDateTime.valueOf() - Date.now();
+    // Convert to UTC for storage and scheduling
+    const utcDateTime = localDateTime.clone().utc();
+    
+    console.log('UTC DateTime:', utcDateTime.format('YYYY-MM-DD HH:mm:ss Z'));
+    console.log('Current Time (UTC):', moment.utc().format('YYYY-MM-DD HH:mm:ss Z'));
 
-        // Allow today’s date as long as time is ahead
-        if (delay < 0) {
-        return res.status(400).json({
-            success: false,
-            message: "sendTime must be later than the current time for today's date"
-        });
-        }
-    // Create campaign (status = draft)
+    // Calculate delay for Bull queue (in milliseconds)
+    const delay = utcDateTime.valueOf() - Date.now();
+
+    console.log('Delay in ms:', delay);
+    console.log('Delay in minutes:', Math.round(delay / 60000));
+
+    // Ensure the scheduled time is in the future
+    if (delay < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Scheduled time must be in the future"
+      });
+    }
+
+    // Create campaign in database
     const campaign = await Campaign.create({
       name,
       subject,
       type,
       sendDate,
       sendTime,
-      timezone,
+      timezone: ianaTimezone, // Store IANA timezone
+      scheduledAt: utcDateTime.toDate(), // Store UTC datetime
       templateId,
       recipientSegmentId
     });
 
+    // Add job to email queue with calculated delay
     await emailQueue.add(
       "send-campaign",
       { campaignId: campaign._id },
       { delay }
     );
 
-    // 5️⃣ Return API response
+    // Return success response
     return res.json({
       success: true,
-      message: "Campaign created successfully",
+      message: "Campaign created and scheduled successfully",
       data: {
         campaign: {
           id: campaign._id,
           name: campaign.name,
-          status: campaign.status
+          status: campaign.status,
+          scheduledAt: utcDateTime.toISOString(),
+          scheduledIn: ianaTimezone,
+          localTime: localDateTime.format('YYYY-MM-DD HH:mm:ss Z'),
+          utcTime: utcDateTime.format('YYYY-MM-DD HH:mm:ss Z')
         }
       }
     });
