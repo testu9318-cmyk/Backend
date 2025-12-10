@@ -13,6 +13,7 @@ const CompaignRoutes = require("./routes/campaign-route");
 const queueRoutes = require('./routes/queueRoutes');
 const sessionMiddleware = require("./config/session");
 const authRoutes = require("./routes/auth.routes");
+const authMiddleware = require("./middleware/auth.middleware");
 
 
 app.use(cors({
@@ -23,18 +24,23 @@ app.use(cors({
     exposedHeaders: ['Set-Cookie'],
     optionsSuccessStatus: 204
 }));
-
-app.use('/api/queue', queueRoutes);
-
-
 dotenv.config();
-
 connectDB();
-app.use(express.json()); // for parsing JSON in POST requests
 
+// 1. Body Parsers
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Register routes
+// 2. Session Middleware (MUST BE FIRST before routes!)
+app.use(sessionMiddleware);
+
+// 3. Public Routes (no auth)
+app.use("/auth", authRoutes);
+
+// 4. Protected Routes (Apply authMiddleware BEFORE all /api routes)
+app.use("/api", authMiddleware);
+
+// 5. All your protected /api routes
 app.use("/api/status", userStatus);
 app.use("/api", userRoutes);
 app.use("/api", coursesRoutes);
@@ -42,10 +48,9 @@ app.use("/api", RoundRoutes);
 app.use("/api", TemplateRoutes);
 app.use("/api", EmailRoutes);
 app.use("/api", CompaignRoutes);
-app.use(sessionMiddleware);
-app.use(express.urlencoded({ extended: true })); 
+app.use("/api/queue", queueRoutes);
+ // Protect all /api routes with authentication
 
-app.use("/api/auth", authRoutes);
 
 // Start server
 const PORT = 5000;
