@@ -35,7 +35,7 @@ module.exports = session({
     sameSite: 'lax',
     httpOnly: true,
     secure: false, // Set to true only in production with HTTPS
-    maxAge: 1000 * 60, // 1 minute
+    maxAge: 1000 * 60 * 60, // 1 minute
     domain: 'localhost', //  Important for CORS
     path: '/', //  Important for all routes
   },

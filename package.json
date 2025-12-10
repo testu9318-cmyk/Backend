@@ -13,6 +13,7 @@
   "type": "commonjs",
   "dependencies": {
     "@bull-board/express": "^6.14.2",
+    "@google/generative-ai": "^0.24.1",
     "bcryptjs": "^3.0.3",
     "bull": "^4.16.5",
     "bullmq": "^5.64.1",
