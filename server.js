@@ -3,6 +3,7 @@ const app = express();
 const userStatus = require("./routes/status-route");
 const cors = require("cors");
 const dotenv = require("dotenv");
+dotenv.config();
 const connectDB = require("./config/db");
 const userRoutes = require("./routes/user-route");
 const coursesRoutes = require("./routes/courese-route");
@@ -24,9 +25,7 @@ app.use(cors({
     exposedHeaders: ['Set-Cookie'],
     optionsSuccessStatus: 204
 }));
-dotenv.config();
 connectDB();
-
 // 1. Body Parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -51,7 +50,10 @@ app.use("/api", CompaignRoutes);
 app.use("/api/queue", queueRoutes);
  // Protect all /api routes with authentication
 
-
 // Start server
 const PORT = 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log("Loaded key in server:", process.env.GEMINI_API_KEY);
+}
+);
